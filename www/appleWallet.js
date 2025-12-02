@@ -162,6 +162,28 @@ var AppleWallet = {
             }, PLUGIN_NAME, 'completeAddPaymentPass', [encCardData]);
         });
     },
+
+    /**
+     * @function postToUrl
+     * @description creates and sends a post request to a given url, using the headers and data passed as parameter.
+     * @param {String} url 
+     * @param {Object} headers 
+     * @param {Object} data 
+     * @param {Function} successCallback 
+     * @param {Function} errorCallback 
+     * @returns {Promise<Object>} - The object with the api response data
+     */
+    postToUrl: function(url, headers, data, successCallback, errorCallback) {
+        return new Promise(function(resolve, reject) {
+            exec(function(res) {
+                executeCallback(successCallback, res);
+                resolve(message);
+            }, function(message) {
+                executeCallback(errorCallback, message);
+                reject(message);
+            }, PLUGIN_NAME, 'postToUrl', [url, headers, data]);
+        });
+    }
 }
 
 module.exports = AppleWallet;

@@ -471,4 +471,73 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
+
+- (void)postToUrl:(CDVInvokedUrlCommand*)command {
+    NSString *urlString = [command.arguments objectAtIndex:0];
+    NSDictionary *headers = [command.arguments objectAtIndex:1];
+    NSDictionary *postData = [command.arguments objectAtIndex:2];
+
+    if (!urlString || !postData) {
+        CDVPluginResult *errorResult =
+            [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                               messageAsString:@"Invalid arguments"];
+        [self.commandDelegate sendPluginResult:errorResult callbackId:command.callbackId];
+        return;
+    }
+
+    NSURL *url = [NSURL URLWithString:urlString];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    request.HTTPMethod = @"POST";
+
+    // Apply dynamic headers
+    for (NSString *key in headers) {
+        NSString *value = [headers objectForKey:key];
+        if (value && key) {
+            [request setValue:value forHTTPHeaderField:key];
+        }
+    }
+    
+    // Convert dynamic data (NSDictionary) to JSON
+    NSError *jsonError = nil;
+    NSData *body = [NSJSONSerialization dataWithJSONObject:postData options:0 error:&jsonError];
+
+    if (jsonError) {
+        CDVPluginResult *errorResult =
+            [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                               messageAsString:@"Could not serialize JSON"];
+        [self.commandDelegate sendPluginResult:errorResult callbackId:command.callbackId];
+        return;
+    }
+
+    request.HTTPBody = body;
+
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *task =
+        [session dataTaskWithRequest:request
+                   completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+
+        if (error) {
+            CDVPluginResult *errorResult =
+                [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:error.localizedDescription];
+            [self.commandDelegate sendPluginResult:errorResult callbackId:command.callbackId];
+            return;
+        }
+
+        // Dynamic response: return raw JSON or string depending on server output
+        id jsonResponse = nil;
+        if (data) {
+            jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        }
+
+        CDVPluginResult *result =
+            [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                              messageAsDictionary:(jsonResponse ?: @{})];
+
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
+
+    [task resume];
+}
+
 @end

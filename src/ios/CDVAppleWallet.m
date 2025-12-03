@@ -524,15 +524,19 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
             return;
         }
 
-        // Dynamic response: return raw JSON or string depending on server output
         id jsonResponse = nil;
-        if (data) {
-            jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        CDVPluginResult *result;
+        NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+        jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        if (http.statusCode == 200) {
+            if (data) {
+                result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                      messageAsDictionary:(jsonResponse ?: @{})];
+            }
+        } else {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                  messageAsDictionary:(jsonResponse ?: @{})];
         }
-
-        CDVPluginResult *result =
-            [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                              messageAsDictionary:(jsonResponse ?: @{})];
 
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
     }];

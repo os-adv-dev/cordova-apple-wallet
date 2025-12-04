@@ -138,15 +138,52 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
 - (void) checkPairedDevices:(CDVInvokedUrlCommand *)command 
 {
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    NSMutableDictionary* dictionary = [[NSMutableDictionary alloc] init];
-    if(appDelegate.isPairedWatchExist) {
-        [dictionary setObject:@"True" forKey:@"isWatchPaired"];
-    } else {
-        [dictionary setObject:@"False" forKey:@"isWatchPaired"];
+    BOOL exists = appDelegate.isPairedWatchExist;
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:exists];
+    [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+// Plugin Method - check if card is in Phone Wallet
+- (void)isCardInPhoneWallet:(CDVInvokedUrlCommand *)command
+{
+    
+    NSArray* arguments = command.arguments;
+    NSString* primaryAccountSuffix = [arguments objectAtIndex:0];
+    PKPassLibrary *passLib = [[PKPassLibrary alloc] init];
+    
+    // find if credit/debit card is exist in any pass container e.g. iPad
+    BOOL isInWallet = NO;
+    for (PKPaymentPass *pass in [passLib passesOfType:PKPassTypePayment]){
+        if ([pass.primaryAccountNumberSuffix isEqualToString:primaryAccountSuffix]) {
+            isInWallet = YES;
+            break;
+        }
     }
     
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dictionary];
-    [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:isInWallet];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+// Plugin Method - check if card is in Watch Wallet
+- (void)isCardInWatchWallet:(CDVInvokedUrlCommand *)command
+{
+    
+    NSArray* arguments = command.arguments;
+    NSString* primaryAccountSuffix = [arguments objectAtIndex:0];
+    PKPassLibrary *passLib = [[PKPassLibrary alloc] init];
+
+    BOOL isInWatch = NO;
+    // find if credit/debit card is exist in any remote pass container e.g. iWatch
+    for (PKPaymentPass *remotePass in [passLib remotePaymentPasses]){
+        if([remotePass.primaryAccountNumberSuffix isEqualToString:primaryAccountSuffix]){
+            isInWatch = YES;
+            break;
+        }
+    }
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:isInWatch];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -430,6 +467,7 @@ typedef void (^completedPaymentProcessHandler)(PKAddPaymentPassRequest *request)
 -(void)numberOfCardsInWalletAndWatch:(CDVInvokedUrlCommand *)command{
     int result = -1;
     PKPassLibrary *passLibrary = [[PKPassLibrary alloc] init];
+    
     NSArray<PKPass *>  *passes = [passLibrary passesOfType: PKPassTypePayment];
     NSArray<PKPass *>  *remotePasses = [passLibrary remotePaymentPasses];
     result = (int)passes.count + (int)remotePasses.count;

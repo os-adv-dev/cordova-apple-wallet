@@ -183,7 +183,47 @@ var AppleWallet = {
                 reject(message);
             }, PLUGIN_NAME, 'postToUrl', [url, headers, data]);
         });
-    }
+    },
+
+    /**
+     * @function isCardInPhoneWallet
+     * @description Checks if a given primaryAccountSuffix (e.g. 0121) exists in the phone wallet
+     * @param {String} primaryAccountSuffix 
+     * @param {Function} successCallback 
+     * @param {Function} errorCallback 
+     * @returns {Promise<Boolean>}
+     */
+    isCardInPhoneWallet: function(primaryAccountSuffix, successCallback, errorCallback) {
+        return new Promise(function(resolve, reject) {
+            exec(function(message) {
+                executeCallback(successCallback, message);
+                resolve(message);
+            }, function(message) {
+                executeCallback(errorCallback, message);
+                reject(message);
+            }, PLUGIN_NAME, 'isCardInPhoneWallet', [primaryAccountSuffix]);
+        });
+    },
+    
+    /**
+     * @function isCardInWatchWallet
+     * @description Checks if a given primaryAccountSuffix (e.g. 0121) exists in the watch wallet
+     * @param {String} primaryAccountSuffix 
+     * @param {Function} successCallback 
+     * @param {Function} errorCallback 
+     * @returns {Promise<Boolean>}
+     */
+    isCardInWatchWallet: function(primaryAccountSuffix, successCallback, errorCallback) {
+        return new Promise(function(resolve, reject) {
+            exec(function(message) {
+                executeCallback(successCallback, message);
+                resolve(message);
+            }, function(message) {
+                executeCallback(errorCallback, message);
+                reject(message);
+            }, PLUGIN_NAME, 'isCardInWatchWallet', [primaryAccountSuffix]);
+        });
+    },
 }
 
 module.exports = AppleWallet;

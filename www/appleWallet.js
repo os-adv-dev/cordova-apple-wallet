@@ -177,7 +177,7 @@ var AppleWallet = {
         return new Promise(function(resolve, reject) {
             exec(function(res) {
                 executeCallback(successCallback, res);
-                resolve(message);
+                resolve(res);
             }, function(message) {
                 executeCallback(errorCallback, message);
                 reject(message);
